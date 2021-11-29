@@ -122,16 +122,16 @@ turbine
             }
         }
 
-        shaft
-        {
-            nElements   20;
-            elementProfiles (cylinder);
-            elementData
-            ( // axialDistance, diameter
-                (-0.66 0.09)
-                ( 0.66 0.09)
-            );
-        }
+/*        shaft*/
+/*        {*/
+/*            nElements   20;*/
+/*            elementProfiles (cylinder);*/
+/*            elementData*/
+/*            ( // axialDistance, diameter*/
+/*                (-0.66 0.09)*/
+/*                ( 0.66 0.09)*/
+/*            );*/
+/*        }*/
 
         profileData
         {
@@ -164,4 +164,21 @@ turbine
     }
 }
 
+// Define motion
+heave_ampl 	heave_ampl [0 0 0 0 0 0 0] 0.0;
+heave_freq 	heave_freq [0 0 0 0 0 0 0] 0.0;
+surge_ampl 	surge_ampl [0 0 0 0 0 0 0] 1.0;
+surge_freq 	surge_freq [0 0 0 0 0 0 0] 0.8;
+sway_ampl 	sway_ampl  [0 0 0 0 0 0 0] 0.0;
+sway_freq 	sway_freq  [0 0 0 0 0 0 0] 0.0;
+pitch_ampl 	pitch_ampl [0 0 0 0 0 0 0] 0.0;
+pitch_freq 	pitch_freq [0 0 0 0 0 0 0] 0.0;
+yaw_ampl 	yaw_ampl   [0 0 0 0 0 0 0] 0.0;
+yaw_freq 	yaw_freq   [0 0 0 0 0 0 0] 0.0;
+roll_ampl 	roll_ampl  [0 0 0 0 0 0 0] 0.0;
+roll_freq 	roll_freq  [0 0 0 0 0 0 0] 0.0;
+
+
+Rotationpointz  Rotationpointz [0 0 0 0 0 0 0] 0.0;
+startTime	startTime  [0 0 0 0 0 0 0] 0.0;
 // ************************************************************************* //

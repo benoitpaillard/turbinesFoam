@@ -870,8 +870,31 @@ void Foam::fv::actuatorLineElement::rotate
     // Rotate the element's velocity vector if specified
     if (rotateVelocity)
     {
-        velocity_ = RM & velocity_;
-        chordRefDirection_ = RM & chordRefDirection_;
+	double azimuthRadians = 0.0;
+	if (velocity_dir.y() == 10.3)
+	{
+	azimuthRadians = atan2(point.y()-rotationPoint.y(),point.z()-rotationPoint.z());
+	}
+	if (velocity_dir.x() == 10.3)
+	{
+	azimuthRadians = atan2(point.x()-rotationPoint.x(),point.z()-rotationPoint.z());
+	}
+	if (velocity_dir.x() == 10.6)
+	{
+	azimuthRadians = atan2(point.x()-rotationPoint.x(),point.y()-rotationPoint.y());
+	}
+	
+	//Info<< "azimuthRadians: " << azimuthRadians << endl;
+	
+	rotateVector
+        (
+            velocity_dir,
+            rotationPoint,
+            axis,
+            azimuthRadians
+        );
+
+        velocity_dir = RM & velocity_dir; //velocity_ = RM & velocity_; Delphine
     }
 
     if (debug)
@@ -910,17 +933,31 @@ void Foam::fv::actuatorLineElement::setVelocity(vector velocity)
         Info<< "Changing velocity of " << name_ << " from "
             << velocity_ << " to " << velocity << endl << endl;
     }
-    velocity_ = velocity;
+
+    if (mag(velocity) != 100.0)
+    {
+    velocity_dir = velocity; // Delphine
+    }
+   
+    if (mag(velocity) == 100.0)
+    {
+    velocity_dir = velocity_;
+    velocity_ = 0.0*velocity_;
+    }
 }
 
 
 void Foam::fv::actuatorLineElement::setSpeed(scalar speed)
 {
-    if (mag(velocity_) > 0)
-    {
-        velocity_ /= mag(velocity_);
-        velocity_ *= speed;
-    }
+    //if (mag(velocity_) > 0)
+    //{
+    //    velocity_ /= mag(velocity_);
+    //    velocity_ *= speed;
+    //}
+    velocity_dir/= mag(velocity_dir);
+    velocity_dir *=speed;	// Delphine
+    velocity_ += velocity_dir; // Delphine
+
 }
 
 

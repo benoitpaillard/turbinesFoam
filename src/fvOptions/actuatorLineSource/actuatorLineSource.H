@@ -206,6 +206,9 @@ public:
             //- Set speed of all elements based on rotation
             void setSpeed(vector point, vector axis, scalar omega);
 
+            //- Set speed of all elements based on rotation Delphine
+            void setVelocity(vector velocity);
+
             //- Set rotational velocity of all elements for flow curvature
             //  correction
             void setOmega(scalar omega);

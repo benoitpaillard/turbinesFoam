@@ -104,6 +104,9 @@ protected:
         //- Velocity of the element
         vector velocity_;
 
+        //- Velocity of the element // Delphine
+        vector velocity_dir;
+
         //- Free stream velocity
         vector freeStreamVelocity_;
 

@@ -539,8 +539,155 @@ void Foam::fv::crossFlowTurbineALSource::rotate(scalar radians)
 
     forAll(blades_, i)
     {
-        blades_[i].rotate(origin_, axis_, radians);
-        blades_[i].setSpeed(origin_, axis_, omega_);
+	// Get initial velocity vector
+	word bladeName = bladeNames_[i];
+        dictionary bladeSubDict = bladesDict_.subDict(bladeName);
+	scalar azimuthalOffset = bladeSubDict.lookupOrDefault
+        (
+            "azimuthalOffset",
+            0.0
+        );
+
+	scalar azimuthRadians = degToRad(azimuthalOffset);
+        scalar radiusCorr = sqrt(magSqr((0.5 - 0.25)*0.14)
+                                     + magSqr(0.5));
+        vector initialVelocity = -freeStreamDirection_*omega_*radiusCorr;
+        scalar velAngle = atan2(((0.5 - 0.25)*0.14), 0.5);
+        rotateVector(initialVelocity, vector::zero, axis_, velAngle);
+        rotateVector
+        (
+            initialVelocity,
+            vector::zero,
+            axis_,
+            azimuthRadians
+        );
+
+	// Read a dictionary to configure the motion
+	const dictionary& motionDict = mesh_.lookupObject<IOdictionary>
+	    (
+		"fvOptions"
+	    );
+
+	    	dimensionedScalar heave_ampl;
+	    motionDict.lookup("heave_ampl") >> heave_ampl;
+	    double heave_ampl_ = heave_ampl.value();
+	    	dimensionedScalar heave_freq;
+	    motionDict.lookup("heave_freq") >> heave_freq;
+	    double heave_freq_ = heave_freq.value();
+	    	dimensionedScalar surge_ampl;
+	    motionDict.lookup("surge_ampl") >> surge_ampl;
+	    double surge_ampl_ = surge_ampl.value();
+	    	dimensionedScalar surge_freq;
+	    motionDict.lookup("surge_freq") >> surge_freq;
+	    double surge_freq_ = surge_freq.value();
+	    	dimensionedScalar sway_ampl;
+	    motionDict.lookup("sway_ampl") >> sway_ampl;
+	    double sway_ampl_ = sway_ampl.value();
+	    	dimensionedScalar sway_freq;
+	    motionDict.lookup("sway_freq") >> sway_freq;
+	    double sway_freq_ = sway_freq.value();
+	    	dimensionedScalar pitch_ampl;
+	    motionDict.lookup("pitch_ampl") >> pitch_ampl;
+	    double pitch_ampl_ = pitch_ampl.value();
+	    	dimensionedScalar pitch_freq;
+	    motionDict.lookup("pitch_freq") >> pitch_freq;
+	    double pitch_freq_ = pitch_freq.value();
+	    	dimensionedScalar yaw_ampl;
+	    motionDict.lookup("yaw_ampl") >> yaw_ampl;
+	    double yaw_ampl_ = yaw_ampl.value();
+	    	dimensionedScalar yaw_freq;
+	    motionDict.lookup("yaw_freq") >> yaw_freq;
+	    double yaw_freq_ = yaw_freq.value();
+	    	dimensionedScalar roll_ampl;
+	    motionDict.lookup("roll_ampl") >> roll_ampl;
+	    double roll_ampl_ = roll_ampl.value();
+	    	dimensionedScalar roll_freq;
+	    motionDict.lookup("roll_freq") >> roll_freq;
+	    double roll_freq_ = roll_freq.value();
+	    	dimensionedScalar Rotationpointz;
+	    motionDict.lookup("Rotationpointz") >> Rotationpointz;
+	    double Rotationpointz_ = Rotationpointz.value();
+		dimensionedScalar startTime;
+	    motionDict.lookup("startTime") >> startTime;
+	    double startTime_ = startTime.value();
+
+	//Info<< "TIME" << time_.value() << endl; // DELPHINE
+	double t_new = time_.value();
+	double t_old = time_.value()-0.01;
+	double heave_new = heave_ampl_*cos(heave_freq_*t_new);
+ 	double surge_new = surge_ampl_*cos(surge_freq_*t_new);
+	double sway_new = sway_ampl_*cos(sway_freq_*t_new);
+	double heave_old = heave_ampl_*cos(heave_freq_*t_old);
+ 	double surge_old = surge_ampl_*cos(surge_freq_*t_old);
+	double sway_old = sway_ampl_*cos(sway_freq_*t_old);
+	double pitch_new = pitch_ampl_*cos(pitch_freq_*t_new);
+	double yaw_new = yaw_ampl_*cos(yaw_freq_*t_new);
+	double roll_new = roll_ampl_*cos(roll_freq_*t_new);
+	double pitch_old = pitch_ampl_*cos(pitch_freq_*t_old);
+	double yaw_old = yaw_ampl_*cos(yaw_freq_*t_old);
+	double roll_old = roll_ampl_*cos(roll_freq_*t_old);
+	double stampnew = t_new/0.01;
+	double stampold = t_old/0.01;
+	vector ori = Rotationpointz_*axis_;
+	double factortemp = 1.0;
+
+	if (t_old == startTime_)
+	{
+	factortemp = 0.0;
+	}
+
+
+    {
+	Info<< "t_old= " << t_old << endl;
+	Info<< "t_new= " << t_new << endl;
+        Info<< "factortemp= " << factortemp << endl;
+    }
+
+// PART 1: restore //
+	// restore the turbine
+	blades_[i].translate(-factortemp*surge_old*freeStreamDirection_-factortemp*heave_old*axis_-factortemp*sway_old*radialDirection_);  
+	blades_[i].rotate(ori, axis_, -factortemp*yaw_old);
+	blades_[i].rotate(ori, freeStreamDirection_, -factortemp*roll_old);
+	blades_[i].rotate(ori, radialDirection_, -factortemp*pitch_old);
+	blades_[i].rotate(origin_, axis_, -stampold*radians); 
+
+	// rezero the element velocity vector (magnitude)
+	blades_[i].setVelocity(100.0*radialDirection_);
+
+        // restore initial vector
+	blades_[i].setVelocity(initialVelocity);
+
+// PART 2: Define rotations //
+	// Define rotational speed
+	blades_[i].rotate(origin_, axis_, stampnew*radians); 
+	blades_[i].setSpeed(origin_, axis_, omega_);
+
+	// Define pitching
+	blades_[i].setVelocity(10.3*freeStreamDirection_); 
+	blades_[i].rotate(ori, radialDirection_, pitch_new); 
+	blades_[i].setSpeed(ori, radialDirection_, (pitch_new-pitch_old)/(t_new-t_old)); 
+
+	// Define rolling
+	blades_[i].setVelocity(10.3*radialDirection_); 
+	blades_[i].rotate(ori, freeStreamDirection_, roll_new); 
+	blades_[i].setSpeed(ori, freeStreamDirection_, (roll_new-roll_old)/(t_new-t_old)); 
+
+	// Defing yawing
+	blades_[i].setVelocity(10.6*freeStreamDirection_); 
+	blades_[i].rotate(ori, axis_, yaw_new); 
+	blades_[i].setSpeed(ori, axis_, (yaw_new-yaw_old)/(t_new-t_old));
+
+// PART 3: Define translations //
+	blades_[i].translate(surge_new*freeStreamDirection_+heave_new*axis_+sway_new*radialDirection_);  
+
+	// fifth: speed of translations	
+	blades_[i].setVelocity(1.0*freeStreamDirection_); 
+	blades_[i].setSpeed(ori-5000.0*axis_, radialDirection_, -atan2((surge_new-surge_old),5000.0)/(t_new-t_old));
+	blades_[i].setVelocity(1.0*radialDirection_); 
+	blades_[i].setSpeed(ori-5000.0*axis_, freeStreamDirection_, -atan2((sway_new-sway_old),5000.0)/(t_new-t_old));
+	blades_[i].setVelocity(1.0*axis_); 
+	blades_[i].setSpeed(ori+5000.0*radialDirection_, freeStreamDirection_, atan2((heave_new-heave_old),5000.0)/(t_new-t_old));
+
     }
 
     if (hasStruts_)

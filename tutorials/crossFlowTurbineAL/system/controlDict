@@ -51,5 +51,14 @@ libs
     "libturbinesFoam.so"
 );
 
+DebugSwitches
+{
+    crossFlowTurbineALSource 1;
+    actuatorLineSource  1;
+    actuatorLineElement 1;
+    LeishmanBeddoes 1;
+    LeishmanBeddoes3G 1;
+    LeishmanBeddoesSGC 1;
+}
 
 // ************************************************************************* //

@@ -617,6 +617,18 @@ void Foam::fv::actuatorLineSource::setSpeed
     }
 }
 
+void Foam::fv::actuatorLineSource::setVelocity // Delphine
+(
+    vector velocity
+)
+{
+    forAll(elements_, i)
+    {
+        elements_[i].setVelocity(velocity);
+    }
+}
+
+
 
 void Foam::fv::actuatorLineSource::scaleVelocity(scalar scale)
 {
