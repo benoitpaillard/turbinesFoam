@@ -612,29 +612,30 @@ void Foam::fv::crossFlowTurbineALSource::rotate(scalar radians)
 	    double startTime_ = startTime.value();
 
 	//Info<< "TIME" << time_.value() << endl; // DELPHINE
-	double t_new = time_.value();
-	double t_old = time_.value()-0.01;
-	double heave_new = heave_ampl_*cos(heave_freq_*t_new);
- 	double surge_new = surge_ampl_*cos(surge_freq_*t_new);
-	double sway_new = sway_ampl_*cos(sway_freq_*t_new);
-	double heave_old = heave_ampl_*cos(heave_freq_*t_old);
- 	double surge_old = surge_ampl_*cos(surge_freq_*t_old);
-	double sway_old = sway_ampl_*cos(sway_freq_*t_old);
-	double pitch_new = pitch_ampl_*cos(pitch_freq_*t_new);
-	double yaw_new = yaw_ampl_*cos(yaw_freq_*t_new);
-	double roll_new = roll_ampl_*cos(roll_freq_*t_new);
-	double pitch_old = pitch_ampl_*cos(pitch_freq_*t_old);
-	double yaw_old = yaw_ampl_*cos(yaw_freq_*t_old);
-	double roll_old = roll_ampl_*cos(roll_freq_*t_old);
-	double stampnew = t_new/0.01;
-	double stampold = t_old/0.01;
-	vector ori = Rotationpointz_*axis_;
-	double factortemp = 1.0;
+  scalar dt = mesh_.time().deltaT().value();
+  double t_new = mesh_.time().value();;
+  double t_old = t_new-dt;
+  double heave_new = heave_ampl_*cos(heave_freq_*t_new);
+  double surge_new = surge_ampl_*cos(surge_freq_*t_new);
+  double sway_new = sway_ampl_*cos(sway_freq_*t_new);
+  double heave_old = heave_ampl_*cos(heave_freq_*t_old);
+  double surge_old = surge_ampl_*cos(surge_freq_*t_old);
+  double sway_old = sway_ampl_*cos(sway_freq_*t_old);
+  double pitch_new = pitch_ampl_*cos(pitch_freq_*t_new);
+  double yaw_new = yaw_ampl_*cos(yaw_freq_*t_new);
+  double roll_new = roll_ampl_*cos(roll_freq_*t_new);
+  double pitch_old = pitch_ampl_*cos(pitch_freq_*t_old);
+  double yaw_old = yaw_ampl_*cos(yaw_freq_*t_old);
+  double roll_old = roll_ampl_*cos(roll_freq_*t_old);
+  double stampnew = t_new/dt;
+  double stampold = t_old/dt;
+  vector ori = Rotationpointz_*axis_;
+  double factortemp = 1.0;
 
-	if (t_old == startTime_)
-	{
-	factortemp = 0.0;
-	}
+  if (t_old == startTime_)
+  {
+  factortemp = 0.0;
+  }
 
 
     {
@@ -645,11 +646,11 @@ void Foam::fv::crossFlowTurbineALSource::rotate(scalar radians)
 
 // PART 1: restore //
 	// restore the turbine
-	blades_[i].translate(-factortemp*surge_old*freeStreamDirection_-factortemp*heave_old*axis_-factortemp*sway_old*radialDirection_);  
+	blades_[i].translate(-factortemp*surge_old*freeStreamDirection_-factortemp*heave_old*axis_-factortemp*sway_old*radialDirection_);
 	blades_[i].rotate(ori, axis_, -factortemp*yaw_old);
 	blades_[i].rotate(ori, freeStreamDirection_, -factortemp*roll_old);
 	blades_[i].rotate(ori, radialDirection_, -factortemp*pitch_old);
-	blades_[i].rotate(origin_, axis_, -stampold*radians); 
+	blades_[i].rotate(origin_, axis_, -stampold*radians);
 
 	// rezero the element velocity vector (magnitude)
 	blades_[i].setVelocity(100.0*radialDirection_);
@@ -659,33 +660,33 @@ void Foam::fv::crossFlowTurbineALSource::rotate(scalar radians)
 
 // PART 2: Define rotations //
 	// Define rotational speed
-	blades_[i].rotate(origin_, axis_, stampnew*radians); 
+	blades_[i].rotate(origin_, axis_, stampnew*radians);
 	blades_[i].setSpeed(origin_, axis_, omega_);
 
 	// Define pitching
-	blades_[i].setVelocity(10.3*freeStreamDirection_); 
-	blades_[i].rotate(ori, radialDirection_, pitch_new); 
-	blades_[i].setSpeed(ori, radialDirection_, (pitch_new-pitch_old)/(t_new-t_old)); 
+	blades_[i].setVelocity(10.3*freeStreamDirection_);
+	blades_[i].rotate(ori, radialDirection_, pitch_new);
+	blades_[i].setSpeed(ori, radialDirection_, (pitch_new-pitch_old)/(t_new-t_old));
 
 	// Define rolling
-	blades_[i].setVelocity(10.3*radialDirection_); 
-	blades_[i].rotate(ori, freeStreamDirection_, roll_new); 
-	blades_[i].setSpeed(ori, freeStreamDirection_, (roll_new-roll_old)/(t_new-t_old)); 
+	blades_[i].setVelocity(10.3*radialDirection_);
+	blades_[i].rotate(ori, freeStreamDirection_, roll_new);
+	blades_[i].setSpeed(ori, freeStreamDirection_, (roll_new-roll_old)/(t_new-t_old));
 
 	// Defing yawing
-	blades_[i].setVelocity(10.6*freeStreamDirection_); 
-	blades_[i].rotate(ori, axis_, yaw_new); 
+	blades_[i].setVelocity(10.6*freeStreamDirection_);
+	blades_[i].rotate(ori, axis_, yaw_new);
 	blades_[i].setSpeed(ori, axis_, (yaw_new-yaw_old)/(t_new-t_old));
 
 // PART 3: Define translations //
-	blades_[i].translate(surge_new*freeStreamDirection_+heave_new*axis_+sway_new*radialDirection_);  
+	blades_[i].translate(surge_new*freeStreamDirection_+heave_new*axis_+sway_new*radialDirection_);
 
-	// fifth: speed of translations	
-	blades_[i].setVelocity(1.0*freeStreamDirection_); 
+	// fifth: speed of translations
+	blades_[i].setVelocity(1.0*freeStreamDirection_);
 	blades_[i].setSpeed(ori-5000.0*axis_, radialDirection_, -atan2((surge_new-surge_old),5000.0)/(t_new-t_old));
-	blades_[i].setVelocity(1.0*radialDirection_); 
+	blades_[i].setVelocity(1.0*radialDirection_);
 	blades_[i].setSpeed(ori-5000.0*axis_, freeStreamDirection_, -atan2((sway_new-sway_old),5000.0)/(t_new-t_old));
-	blades_[i].setVelocity(1.0*axis_); 
+	blades_[i].setVelocity(1.0*axis_);
 	blades_[i].setSpeed(ori+5000.0*radialDirection_, freeStreamDirection_, atan2((heave_new-heave_old),5000.0)/(t_new-t_old));
 
     }
